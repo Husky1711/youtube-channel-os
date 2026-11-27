@@ -1,5 +1,15 @@
 # The YouTube agent skill
 
+> **This is a fork** of [Jakeschincariol/youtube-agent-skill](https://github.com/Jakeschincariol/youtube-agent-skill)
+> (MIT, © 2026 Jake Schincariol). Changes in this fork:
+>
+> - `hookscore.py` no longer rewards keyword stuffing: each property gives diminishing returns
+>   after two trigger words, and a line that is mostly trigger words gets its verdict docked.
+> - `hookscore.py --calibrate mine.csv` checks whether the score predicts results on **your own**
+>   channel (Spearman rank correlation), so you know whether to trust it.
+> - [`PLAN.md`](PLAN.md) - a 4-week test that decides, with numbers, which skills to keep.
+> - [`templates/tracker.csv`](templates/tracker.csv) - the sheet that test fills in.
+
 Eleven Claude skills that run a YouTube channel. Free, MIT, no signup, no API key, nothing to
 connect.
 

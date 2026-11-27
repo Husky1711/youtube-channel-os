@@ -8,6 +8,7 @@ that leaks at the dead one, and averaging hides that.
     python3 hookscore.py hooks.txt            # one hook per line, ranked
     python3 hookscore.py --hook "one line"    # score a single hook
     python3 hookscore.py --json hooks.txt     # machine-readable
+    python3 hookscore.py --calibrate mine.csv # does the score predict YOUR results? (hook,metric)
 
 WHAT THIS CAN AND CANNOT TELL YOU. Measured against 74 real short-form hooks (first 15 seconds of
 auto-captions, top-8 and bottom-8 by views across five channels): it separates deliberately bad
@@ -30,10 +31,23 @@ CURIOSITY = re.compile(r"\b(why|how|what|which|until|before|but|nobody|almost|ex
 
 def words(t): return re.findall(r"[a-z0-9'%$.]+", t.lower())
 
+# Diminishing returns: the first trigger word earns full credit, the second a little, the third and
+# later nothing. Without this, "you never know why you lose, but nobody knows how" outscores a real
+# hook just by stacking keywords.
+def sat(n, cap=2): return min(n, cap)
+
+def density(t):
+    """Share of words that are scoring triggers. Above ~35% the line reads as keyword soup."""
+    w = words(t)
+    if not w: return 0.0
+    trig = len(YOU.findall(t)) + len(STAKE.findall(t)) + len(CURIOSITY.findall(t)) + \
+           sum(1 for x in w if x in VAGUE)
+    return trig / len(w)
+
 def specificity(t):
     w = words(t)
     if not w: return 0
-    nums = len(CONCRETE.findall(t))
+    nums = sat(len(CONCRETE.findall(t)))
     vague = sum(1 for x in w if x in VAGUE)
     filler = sum(1 for x in w if x in FILLER)
     s = 34 + nums * 22 - vague * 16 - filler * 5
@@ -42,16 +56,16 @@ def specificity(t):
     return max(0, min(100, s))
 
 def address(t):
-    n = len(YOU.findall(t))
+    n = sat(len(YOU.findall(t)))
     first = 30 if YOU.search(" ".join(t.split()[:6])) else 0
     return max(0, min(100, 26 + n * 20 + first))
 
 def stakes(t):
-    n = len(STAKE.findall(t))
+    n = sat(len(STAKE.findall(t)))
     return max(0, min(100, 22 + n * 26 + (14 if CONCRETE.search(t) else 0)))
 
 def curiosity(t):
-    n = len(CURIOSITY.findall(t))
+    n = sat(len(CURIOSITY.findall(t)))
     q = 18 if t.strip().endswith("?") else 0
     # a hook that resolves itself has no gap left
     closed = -18 if re.search(r"\b(because|so that|which means)\b", t, re.I) else 0
@@ -78,7 +92,11 @@ def classify(t):
 def score(t):
     parts = {n: fn(t) for n, fn in PROPS}
     vals = list(parts.values())
-    verdict = round(0.6 * (sum(vals) / len(vals)) + 0.4 * min(vals))
+    verdict = 0.6 * (sum(vals) / len(vals)) + 0.4 * min(vals)
+    d = density(t)
+    if d > 0.35:  # keyword soup: dock up to 30 points
+        verdict -= min(30, (d - 0.35) * 100)
+    verdict = max(0, round(verdict))
     name, hits = classify(t)
     return parts, verdict, name, hits
 
@@ -93,6 +111,8 @@ def report(t, parts, verdict, name, hits):
     print(f"    formula      {name}" + (f"  ({hits} pattern{'s' if hits != 1 else ''} matched)" if hits else "  (no formula matched - that is usually a summary, not a hook)"))
     low = min(parts, key=parts.get)
     print(f"    weakest      {low} - {FIX[low]}")
+    if density(t) > 0.35:
+        print(f"    stuffing     {density(t):.0%} trigger words - reads as clickbait, verdict docked")
 
 FIX = {
  "SPECIFICITY": "swap one adjective for a number, a name or a date",
@@ -102,10 +122,49 @@ FIX = {
  "BREVITY": "9 to 24 words. Read it out loud and stop where you run out of breath",
 }
 
+def ranks(xs):
+    order = sorted(range(len(xs)), key=lambda i: xs[i])
+    r = [0.0] * len(xs)
+    i = 0
+    while i < len(order):
+        j = i
+        while j + 1 < len(order) and xs[order[j + 1]] == xs[order[i]]: j += 1
+        for k in range(i, j + 1): r[order[k]] = (i + j) / 2.0
+        i = j + 1
+    return r
+
+def spearman(a, b):
+    ra, rb = ranks(a), ranks(b)
+    n = len(a); ma, mb = sum(ra) / n, sum(rb) / n
+    cov = sum((x - ma) * (y - mb) for x, y in zip(ra, rb))
+    va = sum((x - ma) ** 2 for x in ra) ** 0.5; vb = sum((y - mb) ** 2 for y in rb) ** 0.5
+    return cov / (va * vb) if va and vb else 0.0
+
+def calibrate(path):
+    """Does the score predict anything on YOUR channel? CSV: hook,metric (views or 30s retention %)."""
+    import csv
+    rows = []
+    with open(path, newline="", encoding="utf-8-sig") as fh:
+        for r in csv.reader(fh):
+            if len(r) < 2: continue
+            try: rows.append((r[0], float(r[1].replace(",", "").replace("%", ""))))
+            except ValueError: continue  # header row
+    if len(rows) < 8:
+        print("need at least 8 of your own videos (hook,metric) for this to mean anything"); sys.exit(1)
+    scores = [score(h)[1] for h, _ in rows]
+    rho = spearman(scores, [m for _, m in rows])
+    print(f"\n  {len(rows)} of your videos   Spearman rho = {rho:+.2f}")
+    if rho >= 0.3:   print("  the score tracks your results - use it as a tiebreaker between hooks")
+    elif rho > -0.1: print("  the score does NOT track your results - use it only to catch weak lines, not to pick winners")
+    else:            print("  the score runs AGAINST your results - ignore it for your channel")
+    print()
+
 def main():
     a = sys.argv[1:]
     as_json = "--json" in a
     a = [x for x in a if x != "--json"]
+    if "--calibrate" in a:
+        calibrate(a[a.index("--calibrate") + 1]); return
     if "--hook" in a:
         lines = [a[a.index("--hook") + 1]]
     elif a and os.path.exists(a[0]):

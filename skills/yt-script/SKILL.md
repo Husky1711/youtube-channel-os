@@ -17,7 +17,11 @@ Two tools live in this folder and both actually run. Use them. Do not eyeball th
 ```bash
 python3 hookscore.py hooks.txt              # rank your hook options
 python3 hookscore.py --hook "one line"      # score a single one
+python3 hookscore.py --calibrate mine.csv   # hook,metric rows from the user's own videos
 ```
+
+The score is a heuristic. Once the user has 8+ videos, run `--calibrate`; if it reports that the
+score does not track their results, use it only to catch weak lines and let the user pick the hook.
 
 ## Before you write
 
