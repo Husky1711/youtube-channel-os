@@ -14,7 +14,11 @@ The retention graph is the only honest feedback YouTube gives you. Almost nobody
 ```bash
 python3 retention.py retention.csv --duration 600
 python3 retention.py retention.csv --transcript transcript.srt
+python3 retention.py retention.csv --axis seconds      # when the header does not say
 ```
+
+The tool reads the csv header to tell a percent axis from a seconds axis. If the header is missing it
+guesses and prints a note - a Short under 100 seconds exported in seconds would otherwise be misread.
 
 Getting the file: Studio -> a video -> Analytics -> Engagement -> the audience-retention chart ->
 the download icon -> "Audience retention".

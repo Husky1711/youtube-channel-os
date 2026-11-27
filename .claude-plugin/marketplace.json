@@ -1,15 +1,18 @@
 {
   "$schema": "https://anthropic.com/claude-code/marketplace.schema.json",
-  "name": "youtube-agent-skill",
+  "name": "youtube-channel-os",
   "description": "The YouTube agent skill pack for Claude",
-  "owner": { "name": "Jake Schincariol", "url": "https://opusjake.ai" },
+  "owner": {
+    "name": "Husky1711",
+    "url": "https://github.com/Husky1711"
+  },
   "plugins": [
     {
       "name": "youtube-agent",
       "description": "Eleven Claude skills that run a YouTube channel, including a scored hook panel, a title and thumbnail linter, an edit decision list, a retention reader and a virality engine.",
       "source": "./",
       "category": "productivity",
-      "homepage": "https://github.com/Jakeschincariol/youtube-agent-skill"
+      "homepage": "https://github.com/Husky1711/youtube-channel-os"
     }
   ]
 }

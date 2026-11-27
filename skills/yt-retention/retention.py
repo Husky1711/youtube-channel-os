@@ -20,9 +20,14 @@ report you can act on without scrubbing the video yourself.
 import csv, json, os, re, sys
 
 def load_csv(path):
-    rows = []
+    """Returns (rows, axis) where axis is 'percent', 'seconds' or None if the header did not say."""
+    rows, axis = [], None
     with open(path, newline="", encoding="utf-8-sig", errors="replace") as fh:
         for r in csv.reader(fh):
+            if not rows and r:
+                h = r[0].lower()
+                if "%" in h or "percent" in h: axis = "percent"
+                elif "sec" in h or "time" in h: axis = "seconds"
             nums = []
             for c in r:
                 c = c.strip().replace("%", "").replace(",", "")
@@ -30,20 +35,29 @@ def load_csv(path):
                 except ValueError: nums.append(None)
             vals = [n for n in nums if n is not None]
             if len(vals) >= 2: rows.append((vals[0], vals[1]))
-    return rows
+    return rows, axis
 
 def main():
     a = sys.argv[1:]
     as_json = "--json" in a; a = [x for x in a if x != "--json"]
     tr = a[a.index("--transcript") + 1] if "--transcript" in a else None
-    files = [x for x in a if not x.startswith("--") and x != tr]
+    dur = float(a[a.index("--duration") + 1]) if "--duration" in a else None
+    forced = a[a.index("--axis") + 1] if "--axis" in a else None
+    # Drop every flag AND its value, so argument order does not matter.
+    flag_vals = {a[i + 1] for i, x in enumerate(a) if x in ("--transcript", "--duration", "--axis") and i + 1 < len(a)}
+    files = [x for x in a if not x.startswith("--") and x not in flag_vals]
     if not files or not os.path.exists(files[0]): print(__doc__); sys.exit(1)
-    rows = load_csv(files[0])
+    rows, header_axis = load_csv(files[0])
     if len(rows) < 8: print("could not read at least 8 data points from that csv"); sys.exit(1)
     xs = [r[0] for r in rows]; ys = [r[1] for r in rows]
-    pct_axis = max(xs) <= 100.5
-    dur = None
-    if "--duration" in a: dur = float(a[a.index("--duration") + 1])
+    axis = forced or header_axis
+    if axis is None:
+        # Guess, and say so: a Short under 100 seconds exported in seconds looks like a percent axis.
+        axis = "percent" if max(xs) <= 100.5 else "seconds"
+        if axis == "percent" and not as_json:
+            print("  note: the csv header did not name its axis - reading it as PERCENT of the video."
+                  " Pass --axis seconds if that is wrong.")
+    pct_axis = axis == "percent"
     def at(x): return (x / 100.0 * dur) if (pct_axis and dur) else x
     start = ys[0] or 100.0
     # HOOK: the first 30 seconds, or the first 10% when the axis is a percentage and we have no duration

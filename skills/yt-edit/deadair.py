@@ -79,8 +79,9 @@ def main():
     print(f"\n  {a[0]}   {dur:.2f}s in, {len(cues)} cues, dead-air floor {floor}s\n")
     for c in cuts:
         print(f"    {c['kind']:<7} {c['start']:8.2f} -> {c['end']:8.2f}   {c['end']-c['start']:5.2f}s   {c['why']}")
+    pct = (removed / dur * 100) if dur > 0 else 0.0
     print(f"\n  {len(cuts)} cuts, {removed:.2f}s removed, {dur - removed:.2f}s out "
-          f"({removed / dur * 100:.1f}% shorter)\n")
+          f"({pct:.1f}% shorter)\n")
 
 if __name__ == "__main__":
     main()

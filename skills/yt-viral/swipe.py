@@ -29,14 +29,36 @@ def classify(title):
     scored.sort(reverse=True)
     return scored[0][1] if scored else "Unclassified"
 
+def load_rows(d):
+    """Accept our flat list, {"videos": [...]}, or yt-dlp `--flat-playlist -J` output (one playlist
+    object, or a list of them). yt-dlp names the count `view_count` and puts the channel on the
+    playlist, not on each entry - which is exactly the shape SKILL.md tells you to collect."""
+    def from_playlist(p):
+        ch = p.get("channel") or p.get("uploader") or p.get("title") or "?"
+        out = []
+        for e in p.get("entries") or []:
+            if not isinstance(e, dict): continue
+            if e.get("entries"): out += from_playlist(e); continue   # channel -> tabs -> videos
+            out.append({"channel": e.get("channel") or ch, "title": e.get("title", ""),
+                        "views": e.get("views", e.get("view_count")) or 0,
+                        "url": e.get("url") or e.get("webpage_url", ""), "duration": e.get("duration")})
+        return out
+    if isinstance(d, dict):
+        return from_playlist(d) if "entries" in d else d.get("videos", [])
+    rows = []
+    for r in d:
+        if isinstance(r, dict) and "entries" in r: rows += from_playlist(r)
+        elif isinstance(r, dict):
+            r = dict(r); r.setdefault("views", r.get("view_count", 0)); rows.append(r)
+    return rows
+
 def main():
     a = sys.argv[1:]
     as_json = "--json" in a; a = [x for x in a if x != "--json"]
     lo = float(a[a.index("--min") + 1]) if "--min" in a else 1.5
     files = [x for x in a if not x.startswith("--") and not re.match(r"^[\d.]+$", x)]
     if not files or not os.path.exists(files[0]): print(__doc__); sys.exit(1)
-    rows = json.load(open(files[0]))
-    if isinstance(rows, dict): rows = rows.get("videos", [])
+    rows = load_rows(json.load(open(files[0])))
     by = {}
     for r in rows: by.setdefault(r.get("channel", "?"), []).append(r)
     out, thin = [], []

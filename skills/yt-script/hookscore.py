@@ -186,7 +186,9 @@ def main():
     for r in out:
         report(r["hook"], r["properties"], r["verdict"], r["formula"], r["matched"])
     if len(out) > 1:
-        print(f"\n  winner: {out[0]['hook'].strip()}  ({out[0]['verdict']}, {out[0]['band']})\n")
+        print(f"\n  top-ranked: {out[0]['hook'].strip()}  ({out[0]['verdict']}, {out[0]['band']})")
+        print("  The RANKING inside this set is the signal; the bands are not calibrated, and real hooks")
+        print("  usually land in WEAK/WORKABLE. A summary line ranking last is the reliable catch.\n")
 
 if __name__ == "__main__":
     main()

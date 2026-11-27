@@ -24,6 +24,8 @@ reject one without reading the whole transcript.
 
 ## Writing each one
 
+Read `~/.claude/youtube/voice.md` first if it exists - the new first lines are spoken by the user.
+
 - **A NEW first line.** The long video's line assumes context this viewer does not have. Write the
   replacement and run it through `../yt-script/hookscore.py`.
 - **On-screen text for the first two seconds**, different words from the spoken line.

@@ -26,6 +26,10 @@ against a channel URL is the fastest, the public page works, a manual list works
 [{"channel":"...","title":"...","views":412000,"url":"...","duration":613}]
 ```
 
+`swipe.py` also reads `yt-dlp --flat-playlist -J` output directly - one channel's object, or a JSON
+list of several - so there is no conversion step. Note that this tool reads `../yt-script/hooks.json`:
+install the skills together, not one folder on its own.
+
 **Read, do not scrape.** Public listings only, never a logged-in session, never the user's own
 account credentials.
 

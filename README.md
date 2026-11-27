@@ -9,6 +9,10 @@
 >   channel (Spearman rank correlation), so you know whether to trust it.
 > - [`PLAN.md`](PLAN.md) - a 4-week test that decides, with numbers, which skills to keep.
 > - [`templates/tracker.csv`](templates/tracker.csv) - the sheet that test fills in.
+> - [`REVIEW.md`](REVIEW.md) - full code review: 6 bugs fixed, sample scripts rated.
+> - `skills/yt-script/scriptlint.py` - checks a finished script against the yt-script rules.
+> - [`samples/`](samples/) - 5 scored example scripts, including a deliberately bad control.
+> - `tests/` - 18 automated tests, run on every push.
 
 Eleven Claude skills that run a YouTube channel. Free, MIT, no signup, no API key, nothing to
 connect.
@@ -28,7 +32,7 @@ channel, not by how big the channel is.
 Paste this into Claude:
 
 ```
-https://github.com/Jakeschincariol/youtube-agent-skill
+https://github.com/Husky1711/youtube-channel-os
 
 Install this skill, then confirm /yt-script works.
 ```
@@ -36,14 +40,14 @@ Install this skill, then confirm /yt-script works.
 Or do it yourself, in Claude Code:
 
 ```bash
-git clone https://github.com/Jakeschincariol/youtube-agent-skill.git
-cp -r youtube-agent-skill/skills/yt-* ~/.claude/skills/
+git clone https://github.com/Husky1711/youtube-channel-os.git
+cp -r youtube-channel-os/skills/yt-* ~/.claude/skills/
 ```
 
 Or as a plugin:
 
 ```
-/plugin marketplace add Jakeschincariol/youtube-agent-skill
+/plugin marketplace add Husky1711/youtube-channel-os
 /plugin install youtube-agent
 ```
 

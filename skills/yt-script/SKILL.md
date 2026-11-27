@@ -20,7 +20,12 @@ python3 hookscore.py --hook "one line"      # score a single one
 python3 hookscore.py --calibrate mine.csv   # hook,metric rows from the user's own videos
 ```
 
-The score is a heuristic. Once the user has 8+ videos, run `--calibrate`; if it reports that the
+Before handing the script over, run `python3 scriptlint.py script.md` and fix every `x` line except
+`unfilled` (those are the user's figures to supply). Write the script with one `## SECTION` heading
+per beat and an `[ON SCREEN: ...]` line in each, so the linter can read it. See `samples/` in the repo.
+
+Compare hooks by their RANK inside one set, not by the WEAK/WORKABLE/STRONG band: in testing, good
+hand-written hooks scored 36-55 and landed in WEAK. The score is a heuristic. Once the user has 8+ videos, run `--calibrate`; if it reports that the
 score does not track their results, use it only to catch weak lines and let the user pick the hook.
 
 ## Before you write
