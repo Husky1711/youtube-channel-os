@@ -153,10 +153,14 @@ def calibrate(path):
         print("need at least 8 of your own videos (hook,metric) for this to mean anything"); sys.exit(1)
     scores = [score(h)[1] for h, _ in rows]
     rho = spearman(scores, [m for _, m in rows])
-    print(f"\n  {len(rows)} of your videos   Spearman rho = {rho:+.2f}")
-    if rho >= 0.3:   print("  the score tracks your results - use it as a tiebreaker between hooks")
-    elif rho > -0.1: print("  the score does NOT track your results - use it only to catch weak lines, not to pick winners")
-    else:            print("  the score runs AGAINST your results - ignore it for your channel")
+    # With few videos, a correlation has to be large before it is more than noise. 1.96/sqrt(n-1)
+    # is the usual large-sample cut-off at 95%; it is rough at small n, which is the point of saying so.
+    crit = 1.96 / (len(rows) - 1) ** 0.5
+    print(f"\n  {len(rows)} of your videos   Spearman rho = {rho:+.2f}   (needs beyond +/-{crit:.2f} to count)")
+    if rho >= crit:    print("  the score tracks your results - use it as a tiebreaker between hooks")
+    elif rho <= -crit: print("  the score runs AGAINST your results - ignore it for your channel")
+    else:              print("  no reliable relationship yet - use it only to catch weak lines, not to pick winners."
+                             "\n  Re-run as you add videos.")
     print()
 
 def main():
